@@ -21,7 +21,7 @@ def rotatoChip(point, angle):
     return np.dot(point, rotation_matrix)
 
 
-in_directory = './in_vtks/'
+in_directory = './testFiles/'
 filenames = natsort.natsorted(os.listdir(in_directory))
 
 filenames = [filename for filename in filenames if filename.lower().endswith(".vtk")]
