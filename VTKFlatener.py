@@ -88,8 +88,12 @@ for filename in filenames:
 
     newFilename = os.path.basename(filename)[:-4] + '_aligned.vtk'
 
-    writer = vtk.vtkPolyDataWriter()
     outDirectory = './out_vtks/'
+
+    if not os.path.isdir(outDirectory):
+        os.mkdir(outDirectory)
+
+    writer = vtk.vtkPolyDataWriter()
     writer.SetFileName(os.path.join(outDirectory, newFilename))
     writer.SetFileVersion(42)
     writer.SetInputData(polyData)
