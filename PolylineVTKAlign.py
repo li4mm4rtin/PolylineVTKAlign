@@ -33,13 +33,15 @@ def rotatoChip(point, angle):
 
 # Define input and output directory for files
 #### SHOULD ONLY NEED EDIT HERE ####
-in_directory = './testFiles/'
-outDirectory = './out_vtks/'
-if not os.path.isdir(outDirectory):
+indirectory = '/Users/liammartin/Library/CloudStorage/OneDrive-UniversityofPittsburgh/Research/Projects/Cystocele/SSM/2D_SSM/1-SegmentedData/vtks/'
+outDirectory = None
+outDirectory_notScaled = None
+
+if outDirectory is not None and not os.path.isdir(outDirectory):
     os.mkdir(outDirectory)
 
-# list all files in in_directory if they end with .vtk
-filenames = natsort.natsorted(os.listdir(in_directory))
+# list all files in the input directory if they end with .vtk
+filenames = natsort.natsorted(os.listdir(indirectory))
 filenames = [filename for filename in filenames if filename.lower().endswith(".vtk")]
 
 # Define chosen location to translate the polylines to.
@@ -53,7 +55,7 @@ writer = vtk.vtkPolyDataWriter()
 # loop through files
 for filename in filenames:
     # loads vtk file
-    reader.SetFileName(os.path.join(in_directory, filename))
+    reader.SetFileName(os.path.join(indirectory, filename))
     reader.Update()
 
     # gets output data from vtk file
@@ -64,7 +66,7 @@ for filename in filenames:
     flattenedDataLength = int(len(data) / 8) - 2
 
     # Defines variables needed for scale and rotation loop
-    new_data = np.empty((flattenedDataLength, 3))
+    unscaled_data = new_data = np.zeros((flattenedDataLength, 3))
     j = 0
     cumulativeData = np.zeros(3)
 
@@ -94,8 +96,26 @@ for filename in filenames:
     new_data[:, 1] += transform[1]
     new_data[:, 2] += transform[2]
 
+    unscaled_data = new_data
+
+    if outDirectory_notScaled is not None:
+        for i in range(len(new_data)):
+            vtk_points.InsertNextPoint(new_data[i])
+            polyLine.InsertCellPoint(i)
+
+        polyData = vtk.vtkPolyData()
+        polyData.SetPoints(vtk_points)
+        polyData.SetLines(polyLine)
+
+        newFilename = os.path.basename(filename)[:-4] + '_flattenedTranslate.vtk'
+        writer.SetFileName(os.path.join(outDirectory_notScaled, newFilename))
+        writer.SetFileVersion(42)
+        writer.SetInputData(polyData)
+        writer.Write()
+
     # calculate difference between first and last point for scale and rotation
     pclVectorCurrent = new_data[0] - new_data[-1]
+    print(f"{filename}: ", pclVectorCurrent)
     scale = pclScaleLength / np.linalg.norm(pclVectorCurrent)
     new_data = new_data * scale
 
@@ -118,16 +138,24 @@ for filename in filenames:
     polyData.SetPoints(vtk_points)
     polyData.SetLines(polyLine)
 
-    # writes the vtk files
-    newFilename = os.path.basename(filename)[:-4] + '_aligned.vtk'
-    writer.SetFileName(os.path.join(outDirectory, newFilename))
-    writer.SetFileVersion(42)
-    writer.SetInputData(polyData)
-    writer.Write()
+    if outDirectory is not None:
+        # writes the vtk files
+        newFilename = os.path.basename(filename)[:-4] + '_aligned.vtk'
+        writer.SetFileName(os.path.join(outDirectory, newFilename))
+        writer.SetFileVersion(42)
+        writer.SetInputData(polyData)
+        writer.Write()
 
     # creates the plots
+    plt.figure('Scaled Data')
     plt.plot(new_data[:, 1], new_data[:, 2])
     pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+    x, y = zip(*pcl)
+    plt.plot(x, y)
+
+    plt.figure('Unscaled Data')
+    plt.plot(unscaled_data[:, 1], unscaled_data[:, 2])
+    pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
     x, y = zip(*pcl)
     plt.plot(x, y)
 
