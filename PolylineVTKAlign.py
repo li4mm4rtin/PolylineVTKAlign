@@ -33,7 +33,7 @@ def rotatoChip(point, angle):
 
 # Define input and output directory for files
 #### SHOULD ONLY NEED EDIT HERE ####
-indirectory = '/Users/liammartin/Library/CloudStorage/OneDrive-UniversityofPittsburgh/Research/Projects/Cystocele/SSM/2D_SSM/1-SegmentedData/vtks/'
+indirectory = '/Users/liammartin/Library/CloudStorage/OneDrive-UniversityofPittsburgh/Research/Projects/Cystocele/SSM/2D_SSM/1-SegmentedData/vtks_forFigure/'
 outDirectory = None
 outDirectory_notScaled = None
 
@@ -146,18 +146,112 @@ for filename in filenames:
         writer.SetInputData(polyData)
         writer.Write()
 
-    # creates the plots
-    plt.figure('Scaled Data')
-    plt.plot(new_data[:, 1], new_data[:, 2])
-    pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-    x, y = zip(*pcl)
-    plt.plot(x, y)
+    if filename[0] == 'e':
+        plt.figure('Scaled Data')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='r')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='r', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
 
-    plt.figure('Unscaled Data')
-    plt.plot(unscaled_data[:, 1], unscaled_data[:, 2])
-    pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-    x, y = zip(*pcl)
-    plt.plot(x, y)
+        plt.figure('Scaled Data - Evacuation')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='r')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='r', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.figure('Unscaled Data')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='r', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.figure('Unscaled Data - Evacuation')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='r', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+    elif filename[0] == 'r':
+        plt.figure('Scaled Data')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='b')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='b', linestyle='dashed')
+
+        plt.figure('Scaled Data - Rest')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='b')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='b', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.figure('Unscaled Data')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='b', linestyle='dashed')
+
+        plt.figure('Unscaled Data - Rest')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='b', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+    elif filename[0] == 's':
+        plt.figure('Scaled Data')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='k')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='k', linestyle='dashed')
+
+        plt.figure('Scaled Data - Squeeze')
+        plt.plot(new_data[:, 1], new_data[:, 2], color='k')
+        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='k', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.figure('Unscaled Data')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='k', linestyle='dashed')
+
+        plt.figure('Unscaled Data - Squeeze')
+        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
+        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+        x, y = zip(*pcl)
+        plt.plot(x, y, color='k', linestyle='dashed')
+        plt.xticks([])
+        plt.yticks([])
+
+    else:
+        print("BAD DATA")
+
+    # # creates the plots
+    # plt.figure('Scaled Data')
+    # plt.plot(new_data[:, 1], new_data[:, 2])
+    # pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+    # x, y = zip(*pcl)
+    # plt.plot(x, y)
+    #
+    # plt.figure('Unscaled Data')
+    # plt.plot(unscaled_data[:, 1], unscaled_data[:, 2])
+    # pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+    # x, y = zip(*pcl)
+    # plt.plot(x, y)
 
 # plots data
 plt.show()
