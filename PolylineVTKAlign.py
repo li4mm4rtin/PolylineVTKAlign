@@ -30,12 +30,28 @@ def rotatoChip(point, angle):
 
     return np.dot(point, rotationMatrixX)
 
+def write_vtk_offsets(filename, npoints):
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+        with open(filename, 'w') as file:
+            replace_next_line = False
+            for line in lines:
+                if replace_next_line:
+                    file.write(f"0 {npoints}\n")
+                    replace_next_line = False
+                elif line.startswith("OFFSETS"):
+                    file.write(line)
+                    replace_next_line = True
+                else:
+                    file.write(line)
+
 
 # Define input and output directory for files
 #### SHOULD ONLY NEED EDIT HERE ####
-indirectory = '/Users/liammartin/Library/CloudStorage/OneDrive-UniversityofPittsburgh/Research/Projects/Cystocele/SSM/2D_SSM/1-SegmentedData/vtks_forFigure/'
-outDirectory = None
+indirectory = '/Users/liammartin/Downloads/TotalVTKs_unscaled/'
+outDirectory = '/Users/liammartin/Downloads/TotalVTKs_scaled/'
 outDirectory_notScaled = None
+adjustOffset = True
 
 if outDirectory is not None and not os.path.isdir(outDirectory):
     os.mkdir(outDirectory)
@@ -64,6 +80,7 @@ for filename in filenames:
     # sets x-axis to zero and calculates flattened data
     data[:, 0] = 0
     flattenedDataLength = int(len(data) / 8) - 2
+    flattenedDataLength = int(len(data)) - 2
 
     # Defines variables needed for scale and rotation loop
     unscaled_data = new_data = np.zeros((flattenedDataLength, 3))
@@ -75,20 +92,23 @@ for filename in filenames:
     polyLine = vtk.vtkCellArray()
     polyLine.InsertNextCell(flattenedDataLength)
 
-    # Loop through and compress data, this is an estimation of the center of the defined tube
-    for i in range(len(data)):
-        cumulativeData = cumulativeData + data[i]  # adds up 8 points
-        if i > len(data) - 15:  # break loop before it loops back to the beginning
-            break
+    new_data = data
 
-        if (i + 1) % 8 == 0:  # average the 8 points to get the middle of the tube
-            new_data[j, :] = cumulativeData / 8
-            cumulativeData = np.zeros(3)
-            j += 1
+    # # Loop through and compress data, this is an estimation of the center of the defined tube
+    # for i in range(len(data)):
+    #     cumulativeData = cumulativeData + data[i]  # adds up 8 points
+    #     if i > len(data) - 15:  # break loop before it loops back to the beginning
+    #         break
+    #
+    #     if (i + 1) % 8 == 0:  # average the 8 points to get the middle of the tube
+    #         new_data[j, :] = cumulativeData / 8
+    #         cumulativeData = np.zeros(3)
+    #         j += 1
 
     # transform data to the origin
     transform = origin - new_data[0]
     if pclScaleLength == 0:  # calculates base scale term for the files
+        print(filename)
         pclVector = new_data[0] - new_data[-1]
         pclScaleLength = np.linalg.norm(pclVector)
 
@@ -109,15 +129,15 @@ for filename in filenames:
 
         newFilename = os.path.basename(filename)[:-4] + '_flattenedTranslate.vtk'
         writer.SetFileName(os.path.join(outDirectory_notScaled, newFilename))
-        writer.SetFileVersion(42)
+        # writer.SetFileVersion(42)
         writer.SetInputData(polyData)
         writer.Write()
 
     # calculate difference between first and last point for scale and rotation
     pclVectorCurrent = new_data[0] - new_data[-1]
-    print(f"{filename}: ", pclVectorCurrent)
     scale = pclScaleLength / np.linalg.norm(pclVectorCurrent)
     new_data = new_data * scale
+    print(f"{filename}: ", pclVectorCurrent, scale)
 
     # calculates angle between the template shape and final shape
     angle_rads = angleBetweenVectors(pclVector, pclVectorCurrent)
@@ -142,116 +162,120 @@ for filename in filenames:
         # writes the vtk files
         newFilename = os.path.basename(filename)[:-4] + '_aligned.vtk'
         writer.SetFileName(os.path.join(outDirectory, newFilename))
-        writer.SetFileVersion(42)
+        # writer.SetFileVersion(42)
         writer.SetInputData(polyData)
         writer.Write()
+        if adjustOffset:
+            write_vtk_offsets(os.path.join(outDirectory, newFilename), len(new_data))
 
-    if filename[0] == 'e':
-        plt.figure('Scaled Data')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='r')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='r', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
+        
 
-        plt.figure('Scaled Data - Evacuation')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='r')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='r', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.figure('Unscaled Data')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='r', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.figure('Unscaled Data - Evacuation')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='r', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-    elif filename[0] == 'r':
-        plt.figure('Scaled Data')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='b')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='b', linestyle='dashed')
-
-        plt.figure('Scaled Data - Rest')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='b')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='b', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.figure('Unscaled Data')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='b', linestyle='dashed')
-
-        plt.figure('Unscaled Data - Rest')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='b', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-    elif filename[0] == 's':
-        plt.figure('Scaled Data')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='k')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='k', linestyle='dashed')
-
-        plt.figure('Scaled Data - Squeeze')
-        plt.plot(new_data[:, 1], new_data[:, 2], color='k')
-        pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='k', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-        plt.figure('Unscaled Data')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='k', linestyle='dashed')
-
-        plt.figure('Unscaled Data - Squeeze')
-        plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
-        pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-        x, y = zip(*pcl)
-        plt.plot(x, y, color='k', linestyle='dashed')
-        plt.xticks([])
-        plt.yticks([])
-
-    else:
-        print("BAD DATA")
-
-    # # creates the plots
-    # plt.figure('Scaled Data')
-    # plt.plot(new_data[:, 1], new_data[:, 2])
-    # pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
-    # x, y = zip(*pcl)
-    # plt.plot(x, y)
-    #
-    # plt.figure('Unscaled Data')
-    # plt.plot(unscaled_data[:, 1], unscaled_data[:, 2])
-    # pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
-    # x, y = zip(*pcl)
-    # plt.plot(x, y)
-
-# plots data
-plt.show()
+#     if filename[0] == 'e':
+#         plt.figure('Scaled Data')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='r')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='r', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#         plt.figure('Scaled Data - Evacuation')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='r')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='r', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#         plt.figure('Unscaled Data')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='r', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#         plt.figure('Unscaled Data - Evacuation')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='r')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='r', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#     elif filename[0] == 'r':
+#         plt.figure('Scaled Data')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='b')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='b', linestyle='dashed')
+#
+#         plt.figure('Scaled Data - Rest')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='b')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='b', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#         plt.figure('Unscaled Data')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='b', linestyle='dashed')
+#
+#         plt.figure('Unscaled Data - Rest')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='b')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='b', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#     elif filename[0] == 's':
+#         plt.figure('Scaled Data')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='k')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='k', linestyle='dashed')
+#
+#         plt.figure('Scaled Data - Squeeze')
+#         plt.plot(new_data[:, 1], new_data[:, 2], color='k')
+#         pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='k', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#         plt.figure('Unscaled Data')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='k', linestyle='dashed')
+#
+#         plt.figure('Unscaled Data - Squeeze')
+#         plt.plot(unscaled_data[:, 1], unscaled_data[:, 2], color='k')
+#         pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#         x, y = zip(*pcl)
+#         plt.plot(x, y, color='k', linestyle='dashed')
+#         plt.xticks([])
+#         plt.yticks([])
+#
+#     else:
+#         print("BAD DATA")
+#
+#     # # creates the plots
+#     # plt.figure('Scaled Data')
+#     # plt.plot(new_data[:, 1], new_data[:, 2])
+#     # pcl = [(0, 0), (new_data[-1, 1], new_data[-1, 2])]
+#     # x, y = zip(*pcl)
+#     # plt.plot(x, y)
+#     #
+#     # plt.figure('Unscaled Data')
+#     # plt.plot(unscaled_data[:, 1], unscaled_data[:, 2])
+#     # pcl = [(0, 0), (unscaled_data[-1, 1], unscaled_data[-1, 2])]
+#     # x, y = zip(*pcl)
+#     # plt.plot(x, y)
+#
+# # plots data
+# plt.show()
