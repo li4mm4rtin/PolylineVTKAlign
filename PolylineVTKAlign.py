@@ -48,7 +48,7 @@ def write_vtk_offsets(filename, npoints):
 
 # Define input and output directory for files
 #### SHOULD ONLY NEED EDIT HERE ####
-indirectory = '/Users/liammartin/Downloads/PB_normal_traces/evac/'
+indirectory = '/Users/liammartin/Downloads/TotalVTKs_unscaled/'
 outDirectory = '/Users/liammartin/Downloads/TotalVTKs_scaled/'
 outDirectory_notScaled = None
 adjustOffset = True
